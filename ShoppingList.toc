@@ -1,0 +1,7 @@
+## Interface: 100005
+## Title: ShoppingList
+## Notes: Manages your Shopping Lists. Work in Progress.
+## Author: Daeric-Runetotem
+## Version: 0.0.1
+
+ShoppingList.lua
