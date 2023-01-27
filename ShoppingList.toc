@@ -4,4 +4,4 @@
 ## Author: Daeric-Runetotem
 ## Version: 0.0.1
 
-ShoppingList.lua
+ShoppingList.xml
