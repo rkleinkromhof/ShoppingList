@@ -64,7 +64,7 @@
 *******************************************************************************
 -->
 
-    <Frame name="ShoppingListFrame">
+    <Frame name="ShoppingListFrame" parent="UIParent" inherits="ShoppingListItemTemplate">
         <Size>
             <AbsDimension x="200" y="500"/>
         </Size>
@@ -72,21 +72,21 @@
             <Anchor point="LEFT" />
         </Anchors>
 
-        <Layers>
+        <!-- <Layers>
             <Layer level="BACKGROUND">
             </Layer>
             <Layer level="ARTWORK">
             </Layer>
             <Layer level="OVERLAY">
             </Layer>
-        </Layers>
+        </Layers> -->
 
-        <Scripts>
+        <!-- <Scripts>
             <OnLoad>
                 ShoppingListGreet("")
-                ShoppingListFrame:Show()
+                ShoppingListFrame:Show()	
             </OnLoad>
-        </Scripts>
+        </Scripts> -->
     </Frame>
 
 </Ui>

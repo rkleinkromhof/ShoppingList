@@ -17,7 +17,7 @@ end
 ]]
 
 function ShoppingListGreet(name)
-    local nameExists = string.len(name) > 0
+    local nameExists = name ~= nil and string.len(name) > 0
 
     if(nameExists) then
         showGreeting(capitalize(name))
