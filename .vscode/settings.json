@@ -1,6 +1,10 @@
 {
     "Lua.diagnostics.globals": [
         "SlashCmdList",
-        "message"
+        "message",
+        "GetCursorPosition",
+        "FauxScrollFrame_Update",
+        "FauxScrollFrame_OnVerticalScroll",
+        "FauxScrollFrame_GetOffset"
     ]
 }
