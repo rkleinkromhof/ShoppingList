@@ -1,14 +1,16 @@
-SLASH_HELLO1 = "/shop"
-SLASH_HELLO2 = "/sl"
+-- Imports
+local ScrollingTable = LibStub("ScrollingTable")
 
+-- Inits
+local api = CreateFrame("Frame") -- For registering API Events
 local shoppingListFrame;
 
-local function ShoppingListSlashHandler(name)
-    shoppingListFrame:Init()
-    shoppingListFrame:Show()
-end
+-- API Events
+api:RegisterEvent("ADDON_LOADED")
+--api:RegisterEvent("BAG_UPDATE")
+api:RegisterEvent("TRACKED_RECIPE_UPDATE")
 
-SlashCmdList["HELLO"] = ShoppingListSlashHandler
+print("[ShoppingList] booting up AddOn")
 
 shoppingListFrame = {
     ["frame"] = nil, -- our main frame
@@ -17,6 +19,7 @@ shoppingListFrame = {
         local self = shoppingListFrame
         
         if not self.frame then
+            print("[ShoppingList] init frame")
             local userSettings = {
                 ["reagentWidth"] = 100
             }
@@ -84,11 +87,13 @@ shoppingListFrame = {
             }
 
             -- Frame
-            local _frame = CreateFrame("Frame", "slFrame", UIParent, "ShoppingListItemTemplate")
+            --local _frame = CreateFrame("Frame", "slFrame", UIParent, "ShoppingListItemTemplate")
+            local _frame = CreateFrame("Frame", "slFrame", UIParent, "ShoppingListItemTemplate" and "BackdropTemplate") -- BackdropTemplateMixin
             _frame:SetSize(255, 270)
 		    _frame:SetPoint("CENTER")
 		    _frame:EnableMouse(true)
 		    _frame:SetMovable(true)
+            self.frame = _frame
 
             -- Close button
             local close = CreateFrame("Button", "pslCloseButtonName1", _frame, "UIPanelCloseButton")
@@ -96,14 +101,39 @@ shoppingListFrame = {
             close:SetScript("OnClick", function() _frame:Hide() end)
 
             -- Create tracking window
-            -- table1 = ScrollingTable:CreateST(cols, 50, nil, nil, _frame)
+            table1 = ScrollingTable:CreateST(cols, 50, nil, nil, _frame)
+            table1:SetDisplayRows(userSettings["reagentRows"], 15)
+            table1:SetDisplayCols(cols)
 
-            self.frame = _frame
+            self.frame:SetSize(userSettings["reagentWidth"]+userSettings["reagentNoWidth"]+30, userSettings["reagentRows"]*15+45)
         end
+    end,
+
+    ["OnAddonLoaded"] = function ()
+        -- Slash commands
+        SLASH_SHOPPINGLIST1 = "/shop"
+        SLASH_SHOPPINGLIST2 = "/sl"
+
+        SlashCmdList["SHOPPINGLIST"] = shoppingListFrame.SlashHandler
+
+        shoppingListFrame:Init()
+
+        -- TODO: load data
     end,
 
     ["Show"] = function ()
         local self = shoppingListFrame
         self.frame:Show()
+    end,
+
+    ["SlashHandler"] = function (name)
+        shoppingListFrame:Show()
     end
 }
+
+api:SetScript("OnEvent", function(self, event, arg1, arg2, ...)
+    if event == "ADDON_LOADED" and arg1 == "ShoppingList" then
+        print("[ShoppingList] AddOn loaded")
+        shoppingListFrame.OnAddonLoaded()
+    end
+end)
