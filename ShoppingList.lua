@@ -26,7 +26,6 @@ shoppingListFrame = {
         local self = shoppingListFrame
         
         if not self.frame then
-            print("[ShoppingList] init frame")
             local userSettings = {
                 ["reagentWidth"] = 100
             }
@@ -95,11 +94,12 @@ shoppingListFrame = {
 
             -- Frame
             --local _frame = CreateFrame("Frame", "slFrame", UIParent, "ShoppingListItemTemplate")
-            local _frame = CreateFrame("Frame", "slFrame", UIParent, "BackdropTemplateMixin" and "BackdropTemplate") -- BackdropTemplateMixin
+            local _frame = CreateFrame("Frame", "slFrame", UIParent, "BackdropTemplateMixin" and "BackdropTemplate")
             _frame:SetSize(255, 270)
 		    _frame:SetPoint("CENTER")
 		    _frame:EnableMouse(true)
 		    _frame:SetMovable(true)
+            _frame:Hide()
 
             -- Close button
             local close = CreateFrame("Button", "pslCloseButtonName1", _frame, "UIPanelCloseButton")
@@ -158,60 +158,7 @@ shoppingListFrame = {
     end
 }
 
--- for debugging
-local stringMethods =
-{
-  ["nil"] = function (value)
-    return "nil"
-  end,
-  ["boolean"] = function (value)
-    if (value) then
-        return "true"
-    end
-    return "false"
-  end,
-  ["number"] = function (value)
-    return string.format("%d", value )
-  end,
-  ["string"] = function (value)
-    return value
-  end,
-  ["function"] = function (value)
-    return "function()"
-  end,
-  ["userdata"] = function (value)
-    return "userdata"
-  end,
-  ["thread"] = function (value)
-    return "thread"
-  end,
-  ["table"] = function (value)
-    return "table"
-  end
-}
-
--- for debugging
-local Stringify = function(value)
-    local valueType = type(value)
-    local method = stringMethods[valueType]
-
-    if method then
-        return string.format("[%s] %s", valueType, method(value))
-    end
-    return "unknown type:"..valueType
-end
-
--- for debugging
-local printEventArgs = function (event, args)
-    local stringifiedArgs = ""
-    for i = 1, #args do
-        stringifiedArgs = (stringifiedArgs and stringifiedArgs.."," or "")..Stringify(args[i])
-    end
-
-    print("[ShoppingList] OnEvent: event="..event..", args="..stringifiedArgs)
-end
-
--- Maps OnEvent names to actual methods
+-- Maps OnEvent names to actual methods.
 local eventMapping =
 {
     -- Fires when an AddOn is loaded
@@ -221,10 +168,11 @@ local eventMapping =
             shoppingListFrame.OnLoaded()
         end
     end,
+
     -- Fired when a recipe is tracked or untracked
-    -- TRACKED_RECIPE_UPDATE: recipeSpellId: number, tracked: number
-    ["TRACKED_RECIPE_UPDATE"] = function(recipeNo, tracked)
-        shoppingListFrame.TrackedRecipeUpdate(recipeNo, tracked)
+    -- TRACKED_RECIPE_UPDATE: recipeSpellId: number, tracked: boolean
+    ["TRACKED_RECIPE_UPDATE"] = function(recipeSpellId, tracked)
+        shoppingListFrame.TrackedRecipeUpdate(recipeSpellId, tracked)
     end
 }
 
@@ -235,9 +183,5 @@ api:SetScript("OnEvent", function(self, event, arg1, arg2, ...)
         handler(arg1, arg2, ...)
     end
 
-    -- if event == "ADDON_LOADED" and arg1 == myName then
-    --     shoppingListFrame.OnLoaded()
-    -- end
-
-    -- printEventArgs(event, {arg1, arg2, ...});
+    --ShoppingList_PrintEventArgs(event, {arg1, arg2, ...});
 end)
