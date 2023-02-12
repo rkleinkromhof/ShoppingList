@@ -116,6 +116,17 @@ shoppingListFrame = {
             self.frame.table = table1
 
             _frame:SetSize(userSettings["reagentWidth"]+userSettings["reagentNoWidth"]+30, userSettings["reagentRows"]*15+45)
+
+            table1:RegisterEvents({
+                ["OnMouseDown"] = function(rowFrame, cellFrame, data, cols, row, realrow, column, scrollingTable, button, ...)
+                    if button == "LeftButton" then
+                        _frame:StartMoving()
+                    end
+                end,
+                ["OnMouseUp"] = function(rowFrame, cellFrame, data, cols, row, realrow, column, scrollingTable, ...)
+                    _frame:StopMovingOrSizing()
+                end
+            })
         end
     end,
 
@@ -132,7 +143,7 @@ shoppingListFrame = {
     end,
 
     ["TrackedRecipeUpdate"] = function(recipeSpellId, tracked)
-        recipeInfo = C_TradeSkillUI.GetRecipeInfo(recipeSpellId)
+        local recipeInfo = C_TradeSkillUI.GetRecipeInfo(recipeSpellId)
 
         print((tracked and "" or "un").. "tracking recipe "..recipeInfo.name)
     end,
@@ -204,14 +215,14 @@ end
 local eventMapping =
 {
     -- Fires when an AddOn is loaded
-    -- ADDON_LOADED: [string] addonName
+    -- ADDON_LOADED: addonName: string
     ["ADDON_LOADED"] = function (addonName, ...)
         if (addonName == myName) then
             shoppingListFrame.OnLoaded()
         end
     end,
     -- Fired when a recipe is tracked or untracked
-    -- TRACKED_RECIPE_UPDATE: [number] recipeID, [boolean] tracked
+    -- TRACKED_RECIPE_UPDATE: recipeSpellId: number, tracked: number
     ["TRACKED_RECIPE_UPDATE"] = function(recipeNo, tracked)
         shoppingListFrame.TrackedRecipeUpdate(recipeNo, tracked)
     end
