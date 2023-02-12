@@ -3,14 +3,21 @@ local ScrollingTable = LibStub("ScrollingTable")
 
 -- Inits
 local api = CreateFrame("Frame") -- For registering API Events
-local shoppingListFrame;
+local shoppingListFrame; -- global reference to our main ShoppingList frame
+local myName = "ShoppingList" -- What's my name?
 
 -- API Events
 api:RegisterEvent("ADDON_LOADED")
 --api:RegisterEvent("BAG_UPDATE")
+--api:RegisterEvent("TRADE_SKILL_LIST_UPDATE")
+--api:RegisterEvent("TRADE_SKILL_SHOW")
+--api:RegisterEvent("UNIT_SPELLCAST_SUCCEEDED")
+--api:RegisterEvent("SPELL_DATA_LOAD_RESULT")
+--api:RegisterEvent("MERCHANT_SHOW")
+--api:RegisterEvent("CRAFTINGORDERS_CLAIM_ORDER_RESPONSE")
+--api:RegisterEvent("CRAFTINGORDERS_RELEASE_ORDER_RESPONSE")
+--api:RegisterEvent("CRAFTINGORDERS_FULFILL_ORDER_RESPONSE")
 api:RegisterEvent("TRACKED_RECIPE_UPDATE")
-
-print("[ShoppingList] booting up AddOn")
 
 shoppingListFrame = {
     ["frame"] = nil, -- our main frame
@@ -88,12 +95,11 @@ shoppingListFrame = {
 
             -- Frame
             --local _frame = CreateFrame("Frame", "slFrame", UIParent, "ShoppingListItemTemplate")
-            local _frame = CreateFrame("Frame", "slFrame", UIParent, "ShoppingListItemTemplate" and "BackdropTemplate") -- BackdropTemplateMixin
+            local _frame = CreateFrame("Frame", "slFrame", UIParent, "BackdropTemplateMixin" and "BackdropTemplate") -- BackdropTemplateMixin
             _frame:SetSize(255, 270)
 		    _frame:SetPoint("CENTER")
 		    _frame:EnableMouse(true)
 		    _frame:SetMovable(true)
-            self.frame = _frame
 
             -- Close button
             local close = CreateFrame("Button", "pslCloseButtonName1", _frame, "UIPanelCloseButton")
@@ -101,15 +107,19 @@ shoppingListFrame = {
             close:SetScript("OnClick", function() _frame:Hide() end)
 
             -- Create tracking window
-            table1 = ScrollingTable:CreateST(cols, 50, nil, nil, _frame)
+            local table1 = ScrollingTable:CreateST(cols, 50, nil, nil, _frame)
             table1:SetDisplayRows(userSettings["reagentRows"], 15)
             table1:SetDisplayCols(cols)
 
-            self.frame:SetSize(userSettings["reagentWidth"]+userSettings["reagentNoWidth"]+30, userSettings["reagentRows"]*15+45)
+            -- Refences
+            self.frame = _frame
+            self.frame.table = table1
+
+            _frame:SetSize(userSettings["reagentWidth"]+userSettings["reagentNoWidth"]+30, userSettings["reagentRows"]*15+45)
         end
     end,
 
-    ["OnAddonLoaded"] = function ()
+    ["OnLoaded"] = function ()
         -- Slash commands
         SLASH_SHOPPINGLIST1 = "/shop"
         SLASH_SHOPPINGLIST2 = "/sl"
@@ -119,6 +129,12 @@ shoppingListFrame = {
         shoppingListFrame:Init()
 
         -- TODO: load data
+    end,
+
+    ["TrackedRecipeUpdate"] = function(recipeSpellId, tracked)
+        recipeInfo = C_TradeSkillUI.GetRecipeInfo(recipeSpellId)
+
+        print((tracked and "" or "un").. "tracking recipe "..recipeInfo.name)
     end,
 
     ["Show"] = function ()
@@ -131,9 +147,86 @@ shoppingListFrame = {
     end
 }
 
-api:SetScript("OnEvent", function(self, event, arg1, arg2, ...)
-    if event == "ADDON_LOADED" and arg1 == "ShoppingList" then
-        print("[ShoppingList] AddOn loaded")
-        shoppingListFrame.OnAddonLoaded()
+-- for debugging
+local stringMethods =
+{
+  ["nil"] = function (value)
+    return "nil"
+  end,
+  ["boolean"] = function (value)
+    if (value) then
+        return "true"
     end
+    return "false"
+  end,
+  ["number"] = function (value)
+    return string.format("%d", value )
+  end,
+  ["string"] = function (value)
+    return value
+  end,
+  ["function"] = function (value)
+    return "function()"
+  end,
+  ["userdata"] = function (value)
+    return "userdata"
+  end,
+  ["thread"] = function (value)
+    return "thread"
+  end,
+  ["table"] = function (value)
+    return "table"
+  end
+}
+
+-- for debugging
+local Stringify = function(value)
+    local valueType = type(value)
+    local method = stringMethods[valueType]
+
+    if method then
+        return string.format("[%s] %s", valueType, method(value))
+    end
+    return "unknown type:"..valueType
+end
+
+-- for debugging
+local printEventArgs = function (event, args)
+    local stringifiedArgs = ""
+    for i = 1, #args do
+        stringifiedArgs = (stringifiedArgs and stringifiedArgs.."," or "")..Stringify(args[i])
+    end
+
+    print("[ShoppingList] OnEvent: event="..event..", args="..stringifiedArgs)
+end
+
+-- Maps OnEvent names to actual methods
+local eventMapping =
+{
+    -- Fires when an AddOn is loaded
+    -- ADDON_LOADED: [string] addonName
+    ["ADDON_LOADED"] = function (addonName, ...)
+        if (addonName == myName) then
+            shoppingListFrame.OnLoaded()
+        end
+    end,
+    -- Fired when a recipe is tracked or untracked
+    -- TRACKED_RECIPE_UPDATE: [number] recipeID, [boolean] tracked
+    ["TRACKED_RECIPE_UPDATE"] = function(recipeNo, tracked)
+        shoppingListFrame.TrackedRecipeUpdate(recipeNo, tracked)
+    end
+}
+
+api:SetScript("OnEvent", function(self, event, arg1, arg2, ...)
+    local handler = eventMapping[event]
+
+    if (handler) then
+        handler(arg1, arg2, ...)
+    end
+
+    -- if event == "ADDON_LOADED" and arg1 == myName then
+    --     shoppingListFrame.OnLoaded()
+    -- end
+
+    -- printEventArgs(event, {arg1, arg2, ...});
 end)
